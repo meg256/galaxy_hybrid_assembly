@@ -47,9 +47,9 @@ rule all:
                sample=SAMPLES, stage=STAGES),
         expand(os.path.join(OUTDIR, "{sample}/qc/bandage/{sample}_assembly_graph.jpg"),
                sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.faa"),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}_draft.faa"),
                sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.faa"),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}_scaffold.faa"),
                sample=SAMPLES),
         expand(os.path.join(OUTDIR, "{sample}/prokka/{sample}.faa"),
                sample=SAMPLES),
@@ -202,9 +202,9 @@ rule prokka_draft:
         fasta = os.path.join(OUTDIR, "{sample}/unicycler/assembly.fasta"),
     output:
         #gff = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
-        faa = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.faa"),
+        faa = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}_draft.faa"),
         log = os.path.join(OUTDIR, "{sample}/prokka_draft/prokka.log"),
-        txt = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.txt"),
+        txt = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}_draft.txt"),
     params:
         outdir = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka_draft"),
         prefix = "{sample}_draft",
@@ -230,7 +230,7 @@ rule prokka_draft:
             {input.fasta} \
             > {output.log} 2>&1
 
-        # Prokka writes summary to PROKKA_*.txt inside outdir
+        # Prokka writes summary to *.txt inside outdir
         cp {params.outdir}/{params.prefix}.txt {output.txt}
         """
 
@@ -310,9 +310,9 @@ rule prokka_scaffold:
         fasta = os.path.join(OUTDIR, "{sample}/ragtag/ragtag.scaffold.fasta"),
     output:
         #gff = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
-        faa = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.faa"),
+        faa = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}_scaffold.faa"),
         log = os.path.join(OUTDIR, "{sample}/prokka_scaffold/prokka.log"),
-        txt = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.txt"),
+        txt = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}_scaffold.txt"),
     params:
         outdir = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka_scaffold"),
         prefix = "{sample}_scaffold",
@@ -526,8 +526,8 @@ rule multiqc:
         # Bandage images (draft)
         expand(os.path.join(OUTDIR, "{sample}/qc/bandage/{sample}_assembly_graph.jpg"), sample=SAMPLES),
         # Prokka output txts (all stages) – ensures annotation is done
-        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.txt"), sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.txt"), sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}_draft.txt"), sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}_scaffold.txt"), sample=SAMPLES),
         expand(os.path.join(OUTDIR, "{sample}/prokka/{sample}.txt"), sample=SAMPLES),
         # FastQC HTMLs
         expand(os.path.join(OUTDIR, "{sample}/fastqc/{sample}_1_fastqc.html"), sample=SAMPLES),
