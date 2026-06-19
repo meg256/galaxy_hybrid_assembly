@@ -1,4 +1,5 @@
 ont/*
 illumina/*
 .snakemake
-test_ecoli
+test_ecoli*
+busco_downloads

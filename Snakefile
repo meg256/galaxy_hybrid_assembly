@@ -371,7 +371,7 @@ rule bwa_mem_for_pilon:
         """
 
 rule pilon:
-    conda: ASSEMBLY_ENV
+    conda: ANNOTATION_ENV
     input:
         fasta = os.path.join(OUTDIR, "{sample}/ragtag/ragtag.scaffold.fasta"),
         bam   = os.path.join(OUTDIR, "{sample}/pilon/illumina.sorted.bam"),

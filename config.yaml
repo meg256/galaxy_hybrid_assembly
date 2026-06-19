@@ -25,7 +25,7 @@ reference_genome: "/home/godec/nadia/GCF_000005845.2_ASM584v2_genomic.fna"
 
 # Root output directory. All intermediate and final results for every
 # pipeline stage are written under here, organized by sample and stage.
-output_dir: "/home/godec/nadia/test_ecoli"
+output_dir: "/home/godec/nadia/test_ecoli_2"
 
 # path to existing conda envs built from included yaml files. 
 # Assembly contains newer tools up to unicycler; annotation 
