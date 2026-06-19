@@ -47,11 +47,11 @@ rule all:
                sample=SAMPLES, stage=STAGES),
         expand(os.path.join(OUTDIR, "{sample}/qc/bandage/{sample}_assembly_graph.jpg"),
                sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.faa"),
                sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.faa"),
                sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka/{sample}.gff"),
+        expand(os.path.join(OUTDIR, "{sample}/prokka/{sample}.faa"),
                sample=SAMPLES),
         expand(os.path.join(OUTDIR, "{sample}/mlst/{sample}_mlst.tsv"),
                sample=SAMPLES),
@@ -201,8 +201,8 @@ rule prokka_draft:
     input:
         fasta = os.path.join(OUTDIR, "{sample}/unicycler/assembly.fasta"),
     output:
-        gff = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
-        fna = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.fna"),
+        #gff = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
+        faa = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.faa"),
         log = os.path.join(OUTDIR, "{sample}/prokka_draft/prokka.log"),
         txt = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.txt"),
     params:
@@ -309,8 +309,8 @@ rule prokka_scaffold:
     input:
         fasta = os.path.join(OUTDIR, "{sample}/ragtag/ragtag.scaffold.fasta"),
     output:
-        gff = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
-        fna = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.fna"),
+        #gff = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
+        faa = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.faa"),
         log = os.path.join(OUTDIR, "{sample}/prokka_scaffold/prokka.log"),
         txt = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.txt"),
     params:
@@ -449,8 +449,8 @@ rule prokka:
     input:
         fasta = os.path.join(OUTDIR, "{sample}/pilon/pilon_polished.fasta"),
     output:
-        gff = os.path.join(OUTDIR, "{sample}/prokka/{sample}.gff"),
-        fna = os.path.join(OUTDIR, "{sample}/prokka/{sample}.fna"),
+        #gff = os.path.join(OUTDIR, "{sample}/prokka/{sample}.gff"),
+        faa = os.path.join(OUTDIR, "{sample}/prokka/{sample}.faa"),
         log = os.path.join(OUTDIR, "{sample}/prokka/prokka.log"),
         txt = os.path.join(OUTDIR, "{sample}/prokka/{sample}.txt"),
     params:
@@ -484,7 +484,7 @@ rule prokka:
 rule mlst:
     conda: ANNOTATION_ENV
     input:
-        fna = os.path.join(OUTDIR, "{sample}/prokka/{sample}.fna"),
+        faa = os.path.join(OUTDIR, "{sample}/prokka/{sample}.faa"),
     output:
         tsv = os.path.join(OUTDIR, "{sample}/mlst/{sample}_mlst.tsv"),
     params:
@@ -495,7 +495,7 @@ rule mlst:
     shell:
         """
         mkdir -p $(dirname {output.tsv})
-        mlst {params.scheme_flag} {input.fna} > {output.tsv}
+        mlst {params.scheme_flag} {input.faa} > {output.tsv}
         """
 
 rule abricate:
