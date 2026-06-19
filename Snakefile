@@ -501,7 +501,7 @@ rule mlst:
 rule abricate:
     conda: ANNOTATION_ENV
     input:
-        fna = os.path.join(OUTDIR, "{sample}/prokka/{sample}.fna"),
+        faa = os.path.join(OUTDIR, "{sample}/prokka/{sample}.faa"),
     output:
         tsv = os.path.join(OUTDIR, "{sample}/abricate/{sample}_abricate.tsv"),
     params:
@@ -512,7 +512,7 @@ rule abricate:
         """
         mkdir -p $(dirname {output.tsv})
         abricate --db {params.db} --minid {params.minid} --mincov {params.mincov} \
-            {input.fna} > {output.tsv}
+            {input.faa} > {output.tsv}
         """
 
 
