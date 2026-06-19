@@ -2,10 +2,10 @@
 Hybrid Bacterial Genome Assembly Pipeline
 ==========================================
 FastQC -> Unicycler -> RagTag -> Pilon
-QUAST + BUSCO QC after every assembly-modifying stage (draft, scaffold,
+QUAST + BUSCO QC + PROKKA after every assembly-modifying stage (draft, scaffold,
 pilon). Bandage graph visualization after Unicycler only (RagTag/Pilon
 both emit FASTA, not a graph).
-Downstream: Prokka annotation, MLST + ABRicate typing on the final
+Downstream: MLST + ABRicate typing on the final
 Pilon-polished assembly. MultiQC aggregates everything at the end.
 
 DRAFT STATUS - frst attempt
@@ -46,6 +46,10 @@ rule all:
         expand(os.path.join(OUTDIR, "{sample}/qc/busco/{stage}/short_summary.txt"),
                sample=SAMPLES, stage=STAGES),
         expand(os.path.join(OUTDIR, "{sample}/qc/bandage/{sample}_assembly_graph.jpg"),
+               sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
+               sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
                sample=SAMPLES),
         expand(os.path.join(OUTDIR, "{sample}/prokka/{sample}.gff"),
                sample=SAMPLES),
@@ -192,6 +196,37 @@ rule bandage_draft:
         Bandage info {input.gfa} > {output.info}
         """
 
+rule prokka_draft:
+    conda: ANNOTATION_ENV
+    input:
+        fasta = os.path.join(OUTDIR, "{sample}/unicycler/assembly.fasta"),
+    output:
+        gff = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
+        fna = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.fna"),
+    params:
+        outdir = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka_draft"),
+        prefix = "{sample}_draft",
+        kingdom = config["prokka"]["kingdom"],
+        gcode = config["prokka"]["gcode"],
+        mincontig = config["prokka"]["mincontig"],
+        evalue = config["prokka"]["evalue"],
+        gffver = config["prokka"]["gffver"],
+    threads: THREADS
+    shell:
+        """
+        prokka \
+            --kingdom {params.kingdom} \
+            --gcode {params.gcode} \
+            --mincontig {params.mincontig} \
+            --evalue {params.evalue} \
+            --gffver {params.gffver} \
+            --outdir {params.outdir} \
+            --prefix {params.prefix} \
+            --force \
+            --cpus {threads} \
+            {input.fasta}
+        """
+
 # =============================================================================
 # RAGTAG
 # =============================================================================
@@ -260,6 +295,37 @@ rule busco_scaffold:
             -c {threads} \
             -f
         cp {params.out_path}/{params.out_name}/run_{params.lineage}/short_summary.txt {output.summary}
+        """
+
+rule prokka_scaffold:
+    conda: ANNOTATION_ENV
+    input:
+        fasta = os.path.join(OUTDIR, "{sample}/ragtag/ragtag.scaffold.fasta"),
+    output:
+        gff = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
+        fna = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.fna"),
+    params:
+        outdir = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka_scaffold"),
+        prefix = "{sample}_scaffold",
+        kingdom = config["prokka"]["kingdom"],
+        gcode = config["prokka"]["gcode"],
+        mincontig = config["prokka"]["mincontig"],
+        evalue = config["prokka"]["evalue"],
+        gffver = config["prokka"]["gffver"],
+    threads: THREADS
+    shell:
+        """
+        prokka \
+            --kingdom {params.kingdom} \
+            --gcode {params.gcode} \
+            --mincontig {params.mincontig} \
+            --evalue {params.evalue} \
+            --gffver {params.gffver} \
+            --outdir {params.outdir} \
+            --prefix {params.prefix} \
+            --force \
+            --cpus {threads} \
+            {input.fasta}
         """
 
 # =============================================================================
@@ -434,11 +500,26 @@ rule abricate:
 rule multiqc:
     conda: ASSEMBLY_ENV
     input:
+        # QUAST reports (all stages)
         expand(os.path.join(OUTDIR, "{sample}/qc/quast/{stage}/report.tsv"),
                sample=SAMPLES, stage=STAGES),
+        # BUSCO summaries (all stages)
         expand(os.path.join(OUTDIR, "{sample}/qc/busco/{stage}/short_summary.txt"),
                sample=SAMPLES, stage=STAGES),
+        # Bandage images (draft)
+        expand(os.path.join(OUTDIR, "{sample}/qc/bandage/{sample}_assembly_graph.jpg"),
+               sample=SAMPLES),
+        # Prokka GFFs (all stages) – ensures annotation is done
+        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
+               sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
+               sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka/{sample}.gff"),
+               sample=SAMPLES),
+        # FastQC HTMLs
         expand(os.path.join(OUTDIR, "{sample}/fastqc/{sample}_1_fastqc.html"),
+               sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/fastqc/{sample}_2_fastqc.html"),
                sample=SAMPLES),
     output:
         html = os.path.join(OUTDIR, "multiqc/multiqc_report.html"),
@@ -447,5 +528,6 @@ rule multiqc:
         search_root = OUTDIR,
     shell:
         """
+        mkdir -p {params.outdir}
         multiqc {params.search_root} --outdir {params.outdir} --force
         """
