@@ -230,8 +230,6 @@ rule prokka_draft:
             {input.fasta} \
             > {output.log} 2>&1
 
-        # Prokka writes summary to *.txt inside outdir
-        cp {params.outdir}/{params.prefix}.txt {output.txt}
         """
 
 # =============================================================================
@@ -338,7 +336,6 @@ rule prokka_scaffold:
             {input.fasta} \
             > {output.log} 2>&1
 
-        cp {params.outdir}/{params.prefix}.txt {output.txt}
         """
 
 # =============================================================================
@@ -477,9 +474,9 @@ rule prokka:
             --cpus {threads} \
             {input.fasta} \
             > {output.log} 2>&1
-
-        cp {params.outdir}/{params.prefix}.txt {output.txt}
         """
+        #cp {params.outdir}/{params.prefix}.txt {output.txt}
+        #"""
 
 rule mlst:
     conda: ANNOTATION_ENV
