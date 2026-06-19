@@ -35,7 +35,7 @@ assembly_env_path: "/home/godec/miniforge3/envs/assembly"
 annotation_env_path: "/home/godec/miniforge3/envs/annotation"
 bwasam_env_path: "/home/godec/miniforge3/envs/bwasam"
 
-threads: 8
+threads: 16
 
 unicycler:
   # --mode {conservative,normal,bold}
