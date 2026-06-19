@@ -204,7 +204,7 @@ rule prokka_draft:
         gff = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
         fna = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.fna"),
         log = os.path.join(OUTDIR, "{sample}/prokka_draft/prokka.log"),
-        txt = os.path.join(OUTDIR, "{sample}/prokka_draft/PROKKA_{sample}.txt"),
+        txt = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.txt"),
     params:
         outdir = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka_draft"),
         prefix = "{sample}_draft",
@@ -231,7 +231,7 @@ rule prokka_draft:
             > {output.log} 2>&1
 
         # Prokka writes summary to PROKKA_*.txt inside outdir
-        cp {params.outdir}/PROKKA_{params.prefix}.txt {output.txt}
+        cp {params.outdir}/{params.prefix}.txt {output.txt}
         """
 
 # =============================================================================
@@ -312,7 +312,7 @@ rule prokka_scaffold:
         gff = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
         fna = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.fna"),
         log = os.path.join(OUTDIR, "{sample}/prokka_scaffold/prokka.log"),
-        txt = os.path.join(OUTDIR, "{sample}/prokka_scaffold/PROKKA_{sample}.txt"),
+        txt = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.txt"),
     params:
         outdir = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka_scaffold"),
         prefix = "{sample}_scaffold",
@@ -338,7 +338,7 @@ rule prokka_scaffold:
             {input.fasta} \
             > {output.log} 2>&1
 
-        cp {params.outdir}/PROKKA_{params.prefix}.txt {output.txt}
+        cp {params.outdir}/{params.prefix}.txt {output.txt}
         """
 
 # =============================================================================
@@ -452,7 +452,7 @@ rule prokka:
         gff = os.path.join(OUTDIR, "{sample}/prokka/{sample}.gff"),
         fna = os.path.join(OUTDIR, "{sample}/prokka/{sample}.fna"),
         log = os.path.join(OUTDIR, "{sample}/prokka/prokka.log"),
-        txt = os.path.join(OUTDIR, "{sample}/prokka/PROKKA_{sample}.txt"),
+        txt = os.path.join(OUTDIR, "{sample}/prokka/{sample}.txt"),
     params:
         outdir   = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka"),
         prefix   = "{sample}",
@@ -478,7 +478,7 @@ rule prokka:
             {input.fasta} \
             > {output.log} 2>&1
 
-        cp {params.outdir}/PROKKA_{params.prefix}.txt {output.txt}
+        cp {params.outdir}/{params.prefix}.txt {output.txt}
         """
 
 rule mlst:
