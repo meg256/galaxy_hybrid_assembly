@@ -203,6 +203,8 @@ rule prokka_draft:
     output:
         gff = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
         fna = os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.fna"),
+        log = os.path.join(OUTDIR, "{sample}/prokka_draft/prokka.log"),
+        txt = os.path.join(OUTDIR, "{sample}/prokka_draft/PROKKA_{sample}.txt"),
     params:
         outdir = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka_draft"),
         prefix = "{sample}_draft",
@@ -214,6 +216,7 @@ rule prokka_draft:
     threads: THREADS
     shell:
         """
+        mkdir -p {params.outdir}
         prokka \
             --kingdom {params.kingdom} \
             --gcode {params.gcode} \
@@ -224,7 +227,11 @@ rule prokka_draft:
             --prefix {params.prefix} \
             --force \
             --cpus {threads} \
-            {input.fasta}
+            {input.fasta} \
+            > {output.log} 2>&1
+
+        # Prokka writes summary to PROKKA_*.txt inside outdir
+        cp {params.outdir}/PROKKA_{params.prefix}.txt {output.txt}
         """
 
 # =============================================================================
@@ -304,6 +311,8 @@ rule prokka_scaffold:
     output:
         gff = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
         fna = os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.fna"),
+        log = os.path.join(OUTDIR, "{sample}/prokka_scaffold/prokka.log"),
+        txt = os.path.join(OUTDIR, "{sample}/prokka_scaffold/PROKKA_{sample}.txt"),
     params:
         outdir = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka_scaffold"),
         prefix = "{sample}_scaffold",
@@ -315,6 +324,7 @@ rule prokka_scaffold:
     threads: THREADS
     shell:
         """
+        mkdir -p {params.outdir}
         prokka \
             --kingdom {params.kingdom} \
             --gcode {params.gcode} \
@@ -325,7 +335,10 @@ rule prokka_scaffold:
             --prefix {params.prefix} \
             --force \
             --cpus {threads} \
-            {input.fasta}
+            {input.fasta} \
+            > {output.log} 2>&1
+
+        cp {params.outdir}/PROKKA_{params.prefix}.txt {output.txt}
         """
 
 # =============================================================================
@@ -438,6 +451,8 @@ rule prokka:
     output:
         gff = os.path.join(OUTDIR, "{sample}/prokka/{sample}.gff"),
         fna = os.path.join(OUTDIR, "{sample}/prokka/{sample}.fna"),
+        log = os.path.join(OUTDIR, "{sample}/prokka/prokka.log"),
+        txt = os.path.join(OUTDIR, "{sample}/prokka/PROKKA_{sample}.txt"),
     params:
         outdir   = lambda wc: os.path.join(OUTDIR, wc.sample, "prokka"),
         prefix   = "{sample}",
@@ -449,6 +464,7 @@ rule prokka:
     threads: THREADS
     shell:
         """
+        mkdir -p {params.outdir}
         prokka \
             --kingdom {params.kingdom} \
             --gcode {params.gcode} \
@@ -459,7 +475,10 @@ rule prokka:
             --prefix {params.prefix} \
             --force \
             --cpus {threads} \
-            {input.fasta}
+            {input.fasta} \
+            > {output.log} 2>&1
+
+        cp {params.outdir}/PROKKA_{params.prefix}.txt {output.txt}
         """
 
 rule mlst:
@@ -501,26 +520,18 @@ rule multiqc:
     conda: ASSEMBLY_ENV
     input:
         # QUAST reports (all stages)
-        expand(os.path.join(OUTDIR, "{sample}/qc/quast/{stage}/report.tsv"),
-               sample=SAMPLES, stage=STAGES),
+        expand(os.path.join(OUTDIR, "{sample}/qc/quast/{stage}/report.tsv"), sample=SAMPLES, stage=STAGES),
         # BUSCO summaries (all stages)
-        expand(os.path.join(OUTDIR, "{sample}/qc/busco/{stage}/short_summary.txt"),
-               sample=SAMPLES, stage=STAGES),
+        expand(os.path.join(OUTDIR, "{sample}/qc/busco/{stage}/short_summary.txt"), sample=SAMPLES, stage=STAGES),
         # Bandage images (draft)
-        expand(os.path.join(OUTDIR, "{sample}/qc/bandage/{sample}_assembly_graph.jpg"),
-               sample=SAMPLES),
-        # Prokka GFFs (all stages) – ensures annotation is done
-        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.gff"),
-               sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.gff"),
-               sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka/{sample}.gff"),
-               sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/qc/bandage/{sample}_assembly_graph.jpg"), sample=SAMPLES),
+        # Prokka output txts (all stages) – ensures annotation is done
+        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/PROKKA_{sample}.txt"), sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/PROKKA_{sample}.txt"), sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka/PROKKA_{sample}.txt"), sample=SAMPLES),
         # FastQC HTMLs
-        expand(os.path.join(OUTDIR, "{sample}/fastqc/{sample}_1_fastqc.html"),
-               sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/fastqc/{sample}_2_fastqc.html"),
-               sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/fastqc/{sample}_1_fastqc.html"), sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/fastqc/{sample}_2_fastqc.html"), sample=SAMPLES),
     output:
         html = os.path.join(OUTDIR, "multiqc/multiqc_report.html"),
     params:
