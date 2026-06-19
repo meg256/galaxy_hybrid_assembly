@@ -1,0 +1,10 @@
+name: annotation
+channels:
+  - conda-forge
+  - bioconda
+ 
+dependencies:
+  - pilon=1.24
+  - prokka=1.15.6
+  - mlst=2.35.0
+  - abricate=1.4.0

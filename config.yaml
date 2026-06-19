@@ -1,0 +1,223 @@
+# Hybrid Bacterial Genome Assembly Pipeline
+#
+# FastQC
+# Unicycler -> RagTag -> Medaka -> Pilon
+# Bandage after Unicycler, QUAST/BUSCO QC at every assembly stage
+# Downstream: Prokka, MLST, and ABRicate on the final polished assembly
+# MultiQC to aggregate outputs
+#
+# Minor modification of Galaxy "Create assemblies with Unicycler" tool 
+# (toolshed.g2.bx.psu.edu/repos/iuc/unicycler/unicycler/0.5.1+galaxy0)
+#
+# Directory containing short-read (Illumina) paired-end FASTQ files.
+# Expected naming: matching pairs per sample, e.g. sample1_R1.fastq.gz /
+# sample1_R2.fastq.gz. Every sample is assumed to be hybrid (i.e. also has
+# a matching long-read file in long_reads_dir).
+short_reads_dir: "/home/godec/nadia/illumina"
+
+# Directory containing long-read (Nanopore) FASTQ files, one file per
+# sample, matched by sample name to the short-read pairs above.
+long_reads_dir: "/home/godec/nadia/ont"
+
+# Reference genome FASTA used by RagTag for scaffolding. A single
+# reference is used for all samples.
+reference_genome: "/home/godec/nadia/GCF_000005845.2_ASM584v2_genomic.fna"
+
+# Root output directory. All intermediate and final results for every
+# pipeline stage are written under here, organized by sample and stage.
+output_dir: "/home/godec/nadia/test_ecoli"
+
+# path to existing conda envs built from included yaml files. 
+# Assembly contains newer tools up to unicycler; annotation 
+# contains older tools; bwasam contains two tools that needed 
+# conflictingly old perl/bioperl/zlib versions
+assembly_env_path: "/home/godec/miniforge3/envs/assembly"
+annotation_env_path: "/home/godec/miniforge3/envs/annotation"
+bwasam_env_path: "/home/godec/miniforge3/envs/bwasam"
+
+threads: 8
+
+unicycler:
+  # --mode {conservative,normal,bold}
+  # conservative = smaller contigs, lowest misassembly rate
+  # normal       = moderate contig size and misassembly rate (default)
+  # bold         = longest contigs, higher misassembly rate
+  mode: "normal"
+
+  # --min_fasta_length: exclude contigs from the FASTA shorter than this
+  # length (still retained in the GFA graph). Galaxy/Unicycler default: 100.
+  # USER OVERRIDE: set to 100 per your instruction.
+  min_fasta_length: 100
+
+  # --linear_seqs: expected number of linear (non-circular) sequences in the
+  # underlying sample. Default: 0 (i.e. assume a fully circularizable
+  # bacterial genome -- chromosome + any plasmids).
+  # USER OVERRIDE: set to 0 per your instruction (matches default).
+  linear_seqs: 0
+
+  spades:
+    # --min_kmer_frac: lowest k-mer size for SPAdes assembly, as a fraction
+    # of read length. Default: 0.2
+    min_kmer_frac: 0.2
+
+    # --max_kmer_frac: highest k-mer size for SPAdes assembly, as a fraction
+    # of read length. Default: 0.95
+    max_kmer_frac: 0.95
+
+    # # --kmers: exact k-mers to use, comma-separated. Optional; leave empty
+    # # to let Unicycler choose automatically via min/max_kmer_frac instead.
+    # kmers: ""
+
+    # --kmer_count: number of k-mer steps to use in SPAdes assembly.
+    # Default: 10
+    kmer_count: 10
+
+    # --depth_filter: filter out contigs lower than this fraction of the
+    # chromosomal depth (only done if it doesn't create graph dead ends).
+    # Default: 0.25
+    depth_filter: 0.25
+
+    # # --largest_component: only keep the largest connected component of the
+    # # assembly graph. Default: false (off, per Image 1 toggle = "No")
+    # largest_component: false
+
+  rotation:
+    # # --no_rotate: do NOT rotate completed circular replicons to start at a
+    # # standard gene. Default: false (i.e. rotation IS performed by default;
+    # # toggle in Image 2 = "No" means rotation is on).
+    # no_rotate: false
+
+    # # --start_genes: FASTA file of genes to use as the rotation start point.
+    # # Optional; leave empty to use Unicycler's bundled default gene set.
+    # start_genes: ""
+
+    # --start_gene_id: minimum required BLAST percent identity for a start
+    # gene search. Default: 90.0
+    start_gene_id: 90.0
+
+    # --start_gene_cov: minimum required BLAST percent coverage for a start
+    # gene search. Default: 95.0
+    start_gene_cov: 95.0
+  
+  graph_cleaning:
+    # --min_component_size: unbridged graph components smaller than this
+    # size (bp) are removed from the final graph. Default: 1000
+    min_component_size: 1000
+
+    # --min_dead_end_size: graph dead ends smaller than this size (bp) are
+    # removed from the final graph. Default: 1000
+    min_dead_end_size: 1000
+
+  long_read_alignment:
+    # # --contamination: FASTA file of known contamination in long reads
+    # # (e.g. lambda, phiX, pUC18 spike-ins). Optional; leave empty if none.
+    # contamination: ""
+
+    # --scores: comma-delimited alignment scores: match,mismatch,gap_open,
+    # gap_extend. Default: "3,-6,-5,-2"
+    scores: "3,-6,-5,-2"
+
+    # # --low_score: score threshold below which alignments are considered
+    # # poor. Optional; leave empty to let Unicycler set this automatically
+    # # (Galaxy default behavior).
+    # low_score: ""
+
+    # # --no_simple_bridges: skip simple long-read bridging. Default: false
+    # # (simple long-read bridging is used by default; Image 3 toggle = "No")
+    # no_simple_bridges: false
+
+  # --keep: level of file retention.
+  # 0 = only final files (FASTA, GFA, log)
+  # 1 = also save graphs at main checkpoints (default, per Image 3)
+  # 2 = also keep SAM (enables fast rerun in a different mode)
+  # 3 = keep all temp files and save all graphs (debugging)
+  keep: 1
+
+  # # --no_pilon: do NOT use Pilon to polish Unicycler's own internal final
+  # # assembly. Default: false (Pilon IS used internally by Unicycler -- see
+  # # Image 4, "default: Pilon is used"). Left as false here since Unicycler's
+  # # internal Pilon pass and the pipeline's standalone downstream Pilon step
+  # # (after Medaka) are independent; this flag only controls the internal one.
+  # no_pilon: false
+
+  # # --min_polish_size: minimum size (bp) of a component for Unicycler to
+  # # polish internally with Pilon. Optional; leave empty for Unicycler's own
+  # # default (1000) to apply.
+  # min_polish_size: ""
+
+ragtag:
+  # Extra CLI args appended verbatim to `ragtag.py scaffold`, beyond
+  # reference/query/-o/-t which are wired automatically by the pipeline.
+  # Common ones include -r (infer gap sizes from alignments) and -u (append
+  # "_RagTag" suffix to all output sequences). Left empty to use RagTag's
+  # own defaults (100 bp fixed gaps between scaffolded sequences, no suffix).
+  extra_args: ""
+
+# medaka:
+#   # Model to use for consensus polishing.
+#   # "auto" (default here) lets medaka_consensus resolve the correct model
+#   # automatically from basecaller metadata in the input long-read file.
+#   # If your long reads lack this metadata (e.g. older basecaller, reads that
+#   # have been processed/stripped of tags), set this explicitly instead,
+#   # using a CURRENT basecaller-tied model name, e.g.:
+#   #   "dna_r10.4.1_e8.2_400bps_hac@v4.1.0:consensus"
+#   # Legacy flowcell/chemistry names (e.g. "r941_min_high_g360") are
+#   # deprecated and may not be bundled with current Medaka releases.
+#   model: "auto"
+
+#   # Batch size controlling memory use during inference. Medaka default: 200
+#   batch_size: 200
+
+pilon:
+  # Java heap size for Pilon (it is a JVM tool). Adjust based on genome
+  # size and available memory; 12g is comfortable for most bacterial genomes.
+  java_mem: "12g"
+
+  # --fix: which categories of issues Pilon should attempt to fix.
+  # Pilon default: "snps,indels" via its general "all" minus a few longer-
+  # running categories. Left as "all" here for the most thorough polish;
+  # change to e.g. "snps,indels" for a faster, more conservative pass.
+  fix: "all"
+
+quast:
+  # --min-contig: omit contigs shorter than this length from the report.
+  # Galaxy wrapper default: 500 (NOT Unicycler's own min_fasta_length of
+  # 100 -- these are independent settings for different tools).
+  min_contig: 500
+
+  # --gene-finding: enable gene finding in the QC report. Off by default in
+  # the Galaxy wrapper; set true to enable (slower).
+  gene_finding: false
+
+busco:
+  # BUSCO lineage dataset to use, e.g. "bacteria_odb10" for a broad
+  # bacterial run, or a genus/species-specific odb10 lineage for higher
+  # resolution. Must be set explicitly -- there is no universal default.
+  lineage: "bacteria_odb10"
+
+  # BUSCO mode. "genome" is correct for assembly-level FASTA input (as
+  # opposed to "transcriptome" or "proteins").
+  mode: "genome"
+
+bandage:
+  # Image height in pixels for the rendered assembly graph.
+  height: 1000
+
+prokka:
+  kingdom: "Bacteria"
+  gcode: 11
+  mincontig: 200
+  evalue: "1e-06"
+  gffver: 3
+
+mlst:
+  # Leave empty for automatic scheme detection (MLST's own default
+  # behavior). Set explicitly (e.g. "ecoli") to force a specific PubMLST
+  # scheme.
+  scheme: ""
+
+abricate:
+  # Galaxy wrapper default database.
+  db: "resfinder"
+  minid: 80
+  mincov: 80

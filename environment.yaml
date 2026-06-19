@@ -1,0 +1,27 @@
+name: assembly
+channels:
+  - conda-forge
+  - bioconda
+ 
+# didn't specify install channel - everything except python (which will install from conda-forge) 
+# is exclusively on bioconda
+dependencies:
+  - python=3.12
+  - snakemake=9.23.1
+  - fastqc=0.12.1
+  - multiqc=1.35
+  - unicycler=0.5.1
+  - spades=4.3.0
+  #- flye=2.9.6
+  - quast=5.3.0
+  - busco=6.1.0
+  - bandage=0.9.0
+  #- bandage_ng=2026.6.1
+  - ragtag=2.1.0
+  #- medaka=2.2.2 # on MacOS, will be capped at 2.2.1
+  # - bwa=0.7.19
+  # - samtools=1.23.1
+  # - pilon=1.24
+  # - prokka=1.15.6
+  # - mlst=2.35.0
+  # - abricate=1.4.0
