@@ -526,9 +526,9 @@ rule multiqc:
         # Bandage images (draft)
         expand(os.path.join(OUTDIR, "{sample}/qc/bandage/{sample}_assembly_graph.jpg"), sample=SAMPLES),
         # Prokka output txts (all stages) – ensures annotation is done
-        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/PROKKA_{sample}.txt"), sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/PROKKA_{sample}.txt"), sample=SAMPLES),
-        expand(os.path.join(OUTDIR, "{sample}/prokka/PROKKA_{sample}.txt"), sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_draft/{sample}.txt"), sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka_scaffold/{sample}.txt"), sample=SAMPLES),
+        expand(os.path.join(OUTDIR, "{sample}/prokka/{sample}.txt"), sample=SAMPLES),
         # FastQC HTMLs
         expand(os.path.join(OUTDIR, "{sample}/fastqc/{sample}_1_fastqc.html"), sample=SAMPLES),
         expand(os.path.join(OUTDIR, "{sample}/fastqc/{sample}_2_fastqc.html"), sample=SAMPLES),
